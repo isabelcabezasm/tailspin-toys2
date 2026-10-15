@@ -63,4 +63,28 @@ describe('games data-access helpers', () => {
         await seedGames(db, 2);
         expect(await getGameById(db, 99999)).toBeNull();
     });
+
+    it('preserves a null star rating through getAllGames and getGameById', async () => {
+        const [category] = await db
+            .insert(categories)
+            .values({ name: 'Puzzle', description: 'cat' })
+            .returning({ id: categories.id });
+        const [publisher] = await db
+            .insert(publishers)
+            .values({ name: 'Pub Two', description: 'pub' })
+            .returning({ id: publishers.id });
+        await db.insert(games).values({
+            title: 'Unrated Game',
+            description: 'Not yet reviewed',
+            starRating: null,
+            categoryId: category.id,
+            publisherId: publisher.id,
+        });
+
+        const all = await getAllGames(db);
+        expect(all[0].starRating).toBeNull();
+
+        const game = await getGameById(db, all[0].id);
+        expect(game?.starRating).toBeNull();
+    });
 });
